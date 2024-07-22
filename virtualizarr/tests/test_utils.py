@@ -46,7 +46,7 @@ def test_determine_path_type():
     assert PathType("local") == _determine_path_type("/home/virtualizarr/air.nc")
 
 
-def test_cloudpathlib_openfile_from_filepath(tmp_path):
+def test_cloudpathlib_from_filepath(tmp_path):
     pass
 
 

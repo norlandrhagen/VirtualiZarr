@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     import fsspec.core
     import fsspec.spec
     from cloudpathlib import AnyPath
+    from fsspec.implementations.http import HTTPFileSystem
 
     # See pangeo_forge_recipes.storage
     OpenFileType = Union[
@@ -57,13 +58,46 @@ def _determine_path_type(filepath: str) -> PathType:
         return PathType(pathtype="local")
 
 
-def _cloudpathlib_openfile_from_filepath(
-    *, filepath: str, reader_options: Optional[dict] = {}
-) -> AnyPath:
-    from cloudpathlib import AnyPath
-    # TODO: Should we raise an error if a filepath is passed to this util that is http?
+def _cloudpathlib_transform(*, filepath: AnyPath | str) -> AnyPath | HTTPFileSystem:
+    # TODO: What are all possible return types. S3Path, PosixPath etc.
 
-    return AnyPath(filepath)
+    pathtype = _determine_path_type(filepath=filepath)
+    cfilepath = _cloudpathlib_from_filepath(filepath=filepath)
+
+    if pathtype.pathtype == "local":
+        return cfilepath.as_posix()
+
+    elif pathtype.pathtype == "cloud":
+        return cfilepath.as_uri()
+
+    elif pathtype.pathtype == "http":
+        from fsspec.implementations.http import HTTPFileSystem
+
+        fs = HTTPFileSystem()
+        return fs.open(cfilepath)
+
+    else:
+        raise NotImplementedError(f"{pathtype.pathtype} is not local, http or cloud.")
+
+
+def _cloudpathlib_from_filepath(
+    *, filepath: str, reader_options: Optional[dict] = {}
+) -> AnyPath | str:
+    # cloudpathlib doesn't have an HTTP type, so for now, we can return str for http.
+    from cloudpathlib import AnyPath
+
+    pathtype = _determine_path_type(filepath=filepath)
+
+    if pathtype.pathtype == "http":
+        return filepath
+
+    elif pathtype.pathtype == "local":
+        return AnyPath(filepath)
+
+    elif pathtype.pathtype == "cloud":
+        return AnyPath(filepath)
+    else:
+        raise NotImplementedError(f"PathType: {pathtype.pathtype} is not supported")
 
 
 def _fsspec_openfile_from_filepath(

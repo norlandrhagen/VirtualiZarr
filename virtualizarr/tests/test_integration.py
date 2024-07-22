@@ -7,6 +7,23 @@ from virtualizarr import open_virtual_dataset
 
 
 @pytest.mark.parametrize(
+    "input_file", ["netcdf4_file", "netcdf4_file_https", "netcdf4_file_s3"]
+)
+def test_open_virtual_dataset_file_source(input_file, request):
+    input_file = request.getfixturevalue(input_file)
+
+    from kerchunk.hdf import SingleHdf5ToZarr
+
+    # inline_threshold is chosen to test inlining only the variables listed in vars_to_inline
+    expected = SingleHdf5ToZarr(input_file).translate()
+    # loading the variables should produce same result as inlining them using kerchunk
+    vds = open_virtual_dataset(input_file, indexes={})
+
+    refs = vds.virtualize.to_kerchunk(format="dict")
+    assert refs["refs"]["air/0.0.0"] == expected["refs"]["air/0.0.0"]
+
+
+@pytest.mark.parametrize(
     "inline_threshold, vars_to_inline",
     [
         (5e2, ["lat", "lon"]),

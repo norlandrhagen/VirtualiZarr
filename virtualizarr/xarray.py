@@ -20,7 +20,7 @@ import virtualizarr.kerchunk as kerchunk
 from virtualizarr.kerchunk import FileType, KerchunkStoreRefs
 from virtualizarr.manifests import ChunkManifest, ManifestArray
 from virtualizarr.utils import (
-    _cloudpathlib_openfile_from_filepath,
+    _cloudpathlib_transform,
 )
 from virtualizarr.zarr import (
     attrs_from_zarr_group_json,
@@ -133,7 +133,6 @@ def open_virtual_dataset(
 
         # this is the only place we actually always need to use kerchunk directly
         # TODO avoid even reading byte ranges for variables that will be dropped later anyway?
-
         vds_refs = kerchunk.read_kerchunk_references_from_file(
             filepath=filepath,
             filetype=filetype,
@@ -150,13 +149,13 @@ def open_virtual_dataset(
             # TODO we are reading a bunch of stuff we know we won't need here, e.g. all of the data variables...
             # TODO it would also be nice if we could somehow consolidate this with the reading of the kerchunk references
             # TODO really we probably want a dedicated xarray backend that iterates over all variables only once
-            # fpath = _fsspec_openfile_from_filepath(
-            #     filepath=filepath, reader_options=reader_options
-            # )
-            fpath = _cloudpathlib_openfile_from_filepath(filepath=filepath)
 
+            tfilepath = _cloudpathlib_transform(filepath=filepath)
+            # AFAIK, we currently need fsspec to open files over https in Xarray
+
+            # import pdb; pdb.set_trace()
             ds = xr.open_dataset(
-                fpath, drop_variables=drop_variables, decode_times=False
+                tfilepath, drop_variables=drop_variables, decode_times=False
             )
 
             if indexes is None:

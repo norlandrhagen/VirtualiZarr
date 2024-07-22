@@ -12,7 +12,8 @@ from xarray.coding.times import CFDatetimeCoder
 
 from virtualizarr.manifests.manifest import join
 from virtualizarr.utils import (
-    _cloudpathlib_openfile_from_filepath,
+    _cloudpathlib_from_filepath,
+    _cloudpathlib_transform,
     _determine_path_type,
 )
 from virtualizarr.zarr import ZArray, ZAttrs
@@ -90,21 +91,19 @@ def read_kerchunk_references_from_file(
     # if filetype is user defined, convert to FileType
     filetype = FileType(filetype)
     # convert filepath to cloudfilepath
-    cfilepath = _cloudpathlib_openfile_from_filepath(filepath=filepath)
+    tfilepath = _cloudpathlib_transform(filepath=filepath)
 
     if filetype.name.lower() == "netcdf3":
         from kerchunk.netCDF3 import NetCDF3ToZarr
 
         refs = NetCDF3ToZarr(
-            cfilepath.as_posix(), inline_threshold=0, **reader_options
+            tfilepath, inline_threshold=0, **reader_options
         ).translate()
 
     elif filetype.name.lower() == "hdf5" or filetype.name.lower() == "netcdf4":
         from kerchunk.hdf import SingleHdf5ToZarr
 
-        refs = SingleHdf5ToZarr(
-            cfilepath.as_posix(), inline_threshold=0, **reader_options
-        ).translate()
+        refs = SingleHdf5ToZarr(tfilepath, inline_threshold=0).translate()
     elif filetype.name.lower() == "grib":
         # TODO Grib files should be handled as a DataTree object
         # see https://github.com/TomNicholas/VirtualiZarr/issues/11
@@ -119,12 +118,12 @@ def read_kerchunk_references_from_file(
         )
 
         # handle inconsistency in kerchunk, see GH issue https://github.com/zarr-developers/VirtualiZarr/issues/160
-        refs = {"refs": tiff_to_zarr(cfilepath.as_posix(), **reader_options)}
+        refs = {"refs": tiff_to_zarr(tfilepath, **reader_options)}
     elif filetype.name.lower() == "fits":
         from kerchunk.fits import process_file
 
         # handle inconsistency in kerchunk, see GH issue https://github.com/zarr-developers/VirtualiZarr/issues/160
-        refs = {"refs": process_file(cfilepath.as_posix(), **reader_options)}
+        refs = {"refs": process_file(tfilepath, **reader_options)}
     else:
         raise NotImplementedError(f"Unsupported file type: {filetype.name}")
 
@@ -143,7 +142,7 @@ def _automatically_determine_filetype(
 
     # Read magic bytes from local or remote file
     pathtype = _determine_path_type(filepath=filepath)
-    # if cloud or local, open with _cloudpathlib_openfile_from_filepath
+    # if cloud or local, open with _cloudpathlib_from_filepath
     # if https, pass directly to?? how do you read bytes over https, requests, fsspec?
     if pathtype.pathtype == "http":
         from urllib import request
@@ -151,7 +150,7 @@ def _automatically_determine_filetype(
         with request.urlopen(filepath) as response:
             magic_bytes = response.read(5)
     else:
-        fpath = _cloudpathlib_openfile_from_filepath(filepath=filepath)
+        fpath = _cloudpathlib_from_filepath(filepath=filepath)
         # todo, change local to read via request
         magic_bytes = fpath.read_bytes()
     # TODO: This should only read the first few bytes, not the entire file. Does read_bytes(5) work?
