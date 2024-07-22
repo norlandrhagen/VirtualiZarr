@@ -153,7 +153,6 @@ def open_virtual_dataset(
             tfilepath = _cloudpathlib_transform(filepath=filepath)
             # AFAIK, we currently need fsspec to open files over https in Xarray
 
-            # import pdb; pdb.set_trace()
             ds = xr.open_dataset(
                 tfilepath, drop_variables=drop_variables, decode_times=False
             )
