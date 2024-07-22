@@ -20,6 +20,16 @@ def pytest_runtest_setup(item):
 
 
 @pytest.fixture
+def netcdf4_file_https() -> str:
+    return "https://carbonplan-share.s3.us-west-2.amazonaws.com/air_temp.nc"
+
+
+@pytest.fixture
+def netcdf4_file_s3() -> str:
+    return "s3://carbonplan-share/air_temp.nc"
+
+
+@pytest.fixture
 def netcdf4_file(tmpdir):
     # Set up example xarray dataset
     ds = xr.tutorial.open_dataset("air_temperature")

@@ -23,12 +23,12 @@ dynamic = ["version"]
 dependencies = [
     "xarray>=2024.06.0",
     "kerchunk>=0.2.5",
+    "cloudpathlib[all]",
     "h5netcdf",
     "pydantic",
     "numpy>=2.0.0",
     "ujson",
     "packaging",
-    "universal-pathlib",
 ]
 
 [project.optional-dependencies]

@@ -32,6 +32,7 @@ def test_numpy_arrays_to_inlined_kerchunk_refs(
     vds = open_virtual_dataset(
         netcdf4_file, loadable_variables=vars_to_inline, indexes={}
     )
+
     refs = vds.virtualize.to_kerchunk(format="dict")
 
     # TODO I would just compare the entire dicts but kerchunk returns inconsistent results - see https://github.com/TomNicholas/VirtualiZarr/pull/73#issuecomment-2040931202
