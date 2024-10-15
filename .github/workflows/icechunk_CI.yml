@@ -2,11 +2,11 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
-    paths-ignore:
-    - 'docs/**'
+    branches:
+      - '**'
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - '**'
     paths-ignore:
     - 'docs/**'
   schedule:
